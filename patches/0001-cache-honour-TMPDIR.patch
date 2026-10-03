@@ -1,0 +1,27 @@
+--- a/src/cache.cpp
++++ b/src/cache.cpp
+@@ -21,6 +21,7 @@
+ #ifndef DISABLE_THREADS
+ #include "cache.h"
+ #include <fcntl.h>
++#include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <string.h>
+@@ -528,7 +529,15 @@
+ 
+ bool CacheEntry::swapToDisk()
+ {
+-    const char *path = "/tmp/splixV2-pageXXXXXX";
++    /* CUPS runs filters in a sandbox on macOS and /tmp is not writable
++     * from inside it. CUPS exports TMPDIR pointing at a directory the
++     * filter may use, so honour it and fall back to /tmp elsewhere. */
++    char pathbuf[1024];
++    const char *tmpdir = getenv("TMPDIR");
++    if (!tmpdir || !*tmpdir)
++        tmpdir = "/tmp";
++    snprintf(pathbuf, sizeof(pathbuf), "%s/splixV2-pageXXXXXX", tmpdir);
++    const char *path = pathbuf;
+     int fd;
+ 
+     if (_tempFile) {
